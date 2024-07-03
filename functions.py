@@ -3,6 +3,8 @@ import scipy
 from scipy.integrate import solve_ivp
 from scipy.interpolate import UnivariateSpline
 
+kappa = 2
+
 n: int = 20
 a = 0
 b = 1
@@ -21,6 +23,7 @@ for i in range(n):
 
 rho1 = np.zeros(n)
 
+
 def shorter_system(x, y0, kappa, rho, mu, alp):
     """
     малая система дифференциальных уравнений для решения системы в трансформантах
@@ -33,8 +36,23 @@ def shorter_system(x, y0, kappa, rho, mu, alp):
     :return: набор правых частей системы уравнений
     """
     u, sigma = y0
-    dF_dx = [sigma / mu(x), (alp ** 2 * mu(x) - kappa ** 2 * rho(x)) * u]
-    return dF_dx
+    return [sigma / mu(x), (alp ** 2 * mu(x) - kappa ** 2 * rho(x)) * u]
+
+
+def bigger_system(x, y0, kappa, rho, mu, alpha):
+    """
+    система, содержащая первые производные по alpha
+    :param x: поперечная координата 
+    :param y0: 
+    :param kappa: частота колебаниц
+    :param rho: распределение плотности
+    :param mu: распределение модуля сдвига
+    :param alpha: 
+    :return: 
+    """
+    u, du, dsigma, sigma = y0
+    return [sigma / mu(x), dsigma / mu(x), 2 * alpha * mu(x) * u + (alpha ** 2 * mu(x) - kappa ** 2 * rho(x)) * du,
+             (alpha ** 2 * mu(x) - kappa ** 2 * rho(x)) * u]
 
 
 def shoot(sys, kappa, rho, mu, y0, x, alp):
@@ -81,3 +99,90 @@ def mu(x):
     :return: значение
     """
     return 1
+
+
+def U2(alp, idx):  # x2 - индекс
+    """
+
+    :param alp:
+    :param idx:
+    :return:
+    """
+    y0 = [0 + 0 * 1j, 1 + 0 * 1j]
+    return shoot(shorter_system, kappa, rho, mu, y0, x2, alp)[0][idx]
+
+
+def SIGMA2(alpha):
+    y0 = [0 + 0 * 1j, 1 + 0 * 1j]
+    return shoot(shorter_system, kappa, rho, mu, y0, x2, alpha)[1][-1]
+
+
+def U2_toch(alpha, idx):  # x2 - индекс
+    y0 = [0 + 0 * 1j, 1 + 0 * 1j]
+    return shoot(shorter_system, kappa, rho_toch, mu, y0, x2, alpha)[0][idx]
+
+
+def SIGMA2_toch(alpha):  # x2 - индекс
+    y0 = [0 + 0 * 1j, 1 + 0 * 1j]
+    return shoot(shorter_system, kappa, rho_toch, mu, y0, x2, alpha)[1][-1]
+
+
+def dSIGMA2(alpha):
+    y0 = [0 + 0 * 1j, 0 + 0 * 1j, 0 + 0 * 1j, 1 + 0 * 1j]
+    return shoot(bigger_system, kappa, rho, mu, y0, x2, alpha)[2][-1]  # !!!
+
+
+def dSIGMA2_toch(alpha):
+    y0 = [0 + 0 * 1j, 0 + 0 * 1j, 0 + 0 * 1j, p + 0 * 1j]
+    return shoot(bigger_system, kappa, rho_toch, mu, y0, x2, alpha)[2][-1]  # !!!
+
+
+def u(x1, x2):
+    return 1j * sum(U2(alp_n[i], x2) / dSIGMA2(alp_n[i]) * np.exp(1j * alp_n[i] * x1) for i in range(len(alp_n)))
+
+
+def u_toch(x1, x2):
+    return 1j * sum(U2_toch(alp_n_toch[i], x2) / dSIGMA2_toch(alp_n_toch[i]) * np.exp(1j * alp_n_toch[i] * x1) for i in
+                    range(len(alp_n_toch)))
+
+
+# print(u(0, 0))
+
+def sys6(x, y0, kappa, rho, mu, alp):
+    u, du, ddu, dsigma, ddsigma, sigma = y0
+    return [sigma / mu(x), dsigma / mu(x), ddsigma / mu(x),
+             2 * alp * mu(x) * u + (alp ** 2 * mu(x) - kappa ** 2 * rho(x)) * du,
+             2 * mu(x) * u + 4 * alp * mu(x) * du + (alp ** 2 * mu(x) - rho(x) * kappa ** 2) * ddu,
+             (alp ** 2 * mu(x) - kappa ** 2 * rho(x)) * u]
+
+
+def sol_sys6(alp):
+    y0 = [0 + 0 * 1j, 0 + 0 * 1j, 0 + 0 * 1j, 0 + 0 * 1j, 0 + 0 * 1j, 1 + 0 * 1j]
+    return shoot(sys6, kappa, rho, mu, y0, x2, alp)  # !!!
+
+
+def I(x1, idx, alpha):  # ksi индекс
+    s = 0
+    for i in range(len(alpha)):
+        sol = sol_sys6(alpha[i])
+        a0 = sol[0][idx]
+        a1 = sol[1][idx]
+        b1 = sol[3][-1]
+        b2 = 0.5 * sol[4][-1]
+        s += b1 ** (-2) * (2 * a0 * (a1 - a0 * b1 ** (-1) * b2) - 1j * x1 * a0 ** 2) * np.exp(1j * alpha[i] * x1)
+    return 1j * s
+
+
+def f():
+    f = [u_toch(x1[i], -1).real - u(x1[i], -1).real for i in range(n)]
+    return f
+
+
+def A1(n, alpha):
+    A = np.zeros((n, n), dtype=complex)
+    for i in range(n):
+        for j in range(n):
+            A[i][j] = kappa ** 2 * I(x1[i], j, alpha).real
+            print("A = ", A[i][j])  #!!!!
+    return A
+
