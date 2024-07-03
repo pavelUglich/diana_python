@@ -3,26 +3,6 @@ import scipy
 from scipy.integrate import solve_ivp
 from scipy.interpolate import UnivariateSpline
 
-kappa = 2
-
-n: int = 20
-a = 0
-b = 1
-c = 0
-d = 1
-
-subsegment_length = 1 / n  # Длина каждого подотрезка
-
-x1 = np.zeros(n)  # Создание массива из N элементов
-x2 = np.zeros(n)  # Создание массива из N элементов
-
-for i in range(n):
-    # Вычисление значения, находящегося в середине каждого подотрезка
-    x1[i] = (i + 0.5) * subsegment_length
-    x2[i] = (i + 0.5) * subsegment_length
-
-rho1 = np.zeros(n)
-
 
 def shorter_system(x, y0, kappa, rho, mu, alpha):
     """
@@ -71,17 +51,6 @@ def shoot(sys, kappa, rho, mu, y0, x, alp):
     return sol.y
 
 
-def rho(x):
-    """
-    функция распределения плотности (восстанавиваемая)
-    :param x: поперечная координата
-    :return: значение плотности
-    """
-    #eta = 0.1
-    spl = UnivariateSpline(x2, rho1, k=5)
-    return 1 + spl(x)
-
-
 def rho_toch(x):
     """
     точное распределение плотности
@@ -101,35 +70,40 @@ def mu(x):
     return 1
 
 
-def U2(alp, idx):  # x2 - индекс
-    """
-    :param alp:
-    :param idx:
-    :return:
-    """
-    y0 = [0 + 0 * 1j, 1 + 0 * 1j]
-    return shoot(shorter_system, kappa, rho, mu, y0, x2, alp)[0][idx]
-
-
-def dispersion_equation(alpha, rho):
+def dispersion_equation(alpha, rho, mu, kappa):
     y0 = [0 + 0 * 1j, 1 + 0 * 1j]
     return shoot(shorter_system, kappa, rho, mu, y0, [0, 1], alpha)[1][-1]
 
 
-def displacement(x1, alpha, rho, mu):
-    result = 0
+# отыскание вычетов первого порядка для отыскания перемещений
+def find_residues(roots, rho, mu, kappa):
+    result = []
     y0 = [0 + 0 * 1j, 0 + 0 * 1j, 0 + 0 * 1j, 1 + 0 * 1j]
-    for i in range(len(alpha)):
-        # def shoot(sys, kappa, rho, mu, y0, x, alp):
-        solution = shoot(bigger_system, kappa, rho, mu, y0, [0, 1], alpha[i])
-        term = solution[0][-1] / solution[2][-1]
-        result += 1j * term * np.exp(1j * alpha[i] * x1)
+    for i in range(len(roots)):
+        solution = shoot(bigger_system, kappa, rho, mu, y0, [1], roots[i])
+        result.append(solution[0] / solution[2])
     return result
 
 
-# print(u(0, 0))
+def displacement(x1, roots, residues):
+    result = 0
+    for i in range(len(roots)):
+        result += 1j * residues[i] * np.exp(1j * roots[i] * x1)
+    return result
 
-def sys6(x, y0, kappa, rho, mu, alp):
+
+def array_difference(arr1, arr2):
+    if len(arr1) != len(arr2):
+        raise IndexError("массивы имеют разную длину")
+
+    result = []
+    for i in range(len(arr1)):
+        result.append(arr1[i] - arr2[i])
+
+    return result
+
+
+def the_very_biggest(x, y0, kappa, rho, mu, alp):
     u, du, ddu, dsigma, ddsigma, sigma = y0
     return [sigma / mu(x), dsigma / mu(x), ddsigma / mu(x),
              2 * alp * mu(x) * u + (alp ** 2 * mu(x) - kappa ** 2 * rho(x)) * du,
@@ -137,33 +111,43 @@ def sys6(x, y0, kappa, rho, mu, alp):
              (alp ** 2 * mu(x) - kappa ** 2 * rho(x)) * u]
 
 
-def sol_sys6(alp):
+def sol_sys6(alpha, x2, rho, mu, kappa):
     y0 = [0 + 0 * 1j, 0 + 0 * 1j, 0 + 0 * 1j, 0 + 0 * 1j, 0 + 0 * 1j, 1 + 0 * 1j]
-    return shoot(sys6, kappa, rho, mu, y0, x2, alp)  # !!!
+    return shoot(the_very_biggest, kappa, rho, mu, y0, x2, alpha)  # !!!
 
 
-def I(x1, idx, alpha):  # ksi индекс
-    s = 0
-    for i in range(len(alpha)):
-        sol = sol_sys6(alpha[i])
-        a0 = sol[0][idx]
-        a1 = sol[1][idx]
-        b1 = sol[3][-1]
-        b2 = 0.5 * sol[4][-1]
-        s += b1 ** (-2) * (2 * a0 * (a1 - a0 * b1 ** (-1) * b2) - 1j * x1 * a0 ** 2) * np.exp(1j * alpha[i] * x1)
-    return 1j * s
+def evaluate_b1_b2(roots, rho, mu, kappa):
+    b1 = []
+    b2 = []
+    for i in range(len(roots)):
+        solution = sol_sys6(roots[i], [1], rho, mu, kappa)
+        b1.append(solution[3])
+        b2.append(solution[4])
+    return b1, b2
 
 
-def right_part():
-    f = [u_toch(x1[i], -1).real - u(x1[i], -1).real for i in range(n)]
-    return f
+def evaluate_a0_a1(roots, rho, mu, kappa, x2):
+    a0 = []
+    a1 = []
+    y0 = [0 + 0 * 1j, 0 + 0 * 1j, 0 + 0 * 1j, 1 + 0 * 1j]
+    for i in range(len(roots)):
+        solution = shoot(bigger_system, kappa, rho, mu, y0, x2, roots[i])
+        a0.append(solution[0])
+        a1.append(solution[1])
+    return a0, a1
 
 
-def A1(n, alpha):
-    A = np.zeros((n, n), dtype=complex)
-    for i in range(n):
-        for j in range(n):
-            A[i][j] = kappa ** 2 * I(x1[i], j, alpha).real
-            print("A[", i, ",", j, "] = ", A[i][j])  #!!!!
-    return A
+def matrix_rho(roots, x1, a_0, a_1, b_1, b_2, rows, columns):
+    result = np.zeros((rows, columns), dtype=complex)
+    for i in range(len(roots)):
+        for ii in range(rows):
+            for iii in range(columns):
+                multiplier = np.exp(x1[iii] * 1j * roots[i])
+                item = 1j * (2 * a_0[i][ii] * (a_1[i][ii] - a_0[i][ii] * 0.5 * b_2[i]/b_1[i])
+                 + 1j * a_0[i][ii] * a_0[i][ii]*x1[iii]) / b_1[i] / b_1[i]
+                result[iii][ii] += item * multiplier
+    return result
 
+
+def process_matrix(matrix, kappa, h_y):
+    return matrix * kappa * h_y

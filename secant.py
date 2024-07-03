@@ -42,7 +42,7 @@ def secant_method(f, x0, x1, tol=1e-7, max_iter: int = 20):
     raise ValueError(f"Метод секущих не сошелся к заданной точности {tol} после {max_iter} итераций.")
 
 
-def find_alp(f):
+def find_roots(f):
     real_roots = []
     im_roots = []
     f_real = [f(alp1[i]) for i in range(len(alp1))]

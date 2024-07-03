@@ -3,24 +3,85 @@ import numpy as np
 import pandas as pd
 from scipy.interpolate import UnivariateSpline
 import functions
-from secant import find_alp
+from secant import find_roots
 
-p = 1
+#p = 1
+
+# 1. Частота колебаний
+kappa = 2
+
+# 2. Количество точек на отрезках
+n_x: int = 20
+n_y: int = 20
+a = 0
+b = 1
+c = 0
+d = 1
+
+h_x = 1 / n_x  # Длина каждого подотрезка
+h_y = 1 / n_y  # Длина каждого подотрезка
+
+x1 = np.zeros(n_x)  # Создание массива из N элементов
+x2 = np.zeros(n_y)  # Создание массива из N элементов
+
+for i in range(n_x):
+    # Вычисление значения, находящегося в середине каждого подотрезка
+    x1[i] = (i + 0.5) * h_x
+
+for i in range(n_y):
+    x2[i] = (i + 0.5) * h_y
+
+# Восстанавливаемая плотность
+rho1 = np.zeros(n_y)
+
+
+def rho(x):
+    """
+    функция распределения плотности (восстанавиваемая)
+    :param x: поперечная координата
+    :return: значение плотности
+    """
+    spl = UnivariateSpline(x2, rho1, k=5)
+    return 1 + spl(x)
+
+
+# построение двух дисперсионных уравнений
+equation1 = lambda xx: functions.dispersion_equation(xx, rho, functions.mu, kappa)
+equation2 = lambda xx: functions.dispersion_equation(xx, functions.rho_toch, functions.mu, kappa)
+
+# отыскание корней в неоднородном и однородном случаях
+roots = find_roots(equation1)
+roots_toch = find_roots(equation2)
+
+# отыскание вычетов в неоднородном и однородном случаях
+residues = functions.find_residues(roots, rho, functions.mu, kappa)
+residues_toch = functions.find_residues(roots, functions.rho_toch, functions.mu, kappa)
+
+# print(functions.displacement(0.025, roots, residues))
+# print(functions.displacement(0.025, roots_toch, residues_toch))
+
+# построение правой части
+wavefield = []
+wavefield_toch = []
+for i in range(n_x):
+    wavefield.append(functions.displacement(x1[i], roots, residues))
+    wavefield_toch.append(functions.displacement(x1[i], roots_toch, residues_toch))
+rp = functions.array_difference(wavefield, wavefield_toch)
+
+# print(roots, len(roots))
+# print(roots_toch, len(roots_toch))
+
+# построение матрицы
+# отыскание b_1, b_2
+b_1, b_2 = functions.evaluate_b1_b2(roots, rho, functions.mu, kappa)
+a_0, a_1 = functions.evaluate_a0_a1(roots, rho, functions.mu, kappa, x2)
+A = functions.matrix_rho(roots, x1, a_0, a_1, b_1, b_2, n_x, n_y)
+A = functions.process_matrix(A, kappa, h_y)
+#A = functions.A1(functions.n, roots)
 
 
 
-x = functions.x2
-equation1 = lambda xx: functions.dispersion_equation(xx, functions.rho)
-equation2 = lambda xx: functions.dispersion_equation(xx, functions.rho_toch)
-alp_n = find_alp(equation1)
-alp_n_toch = find_alp(equation2)
-print(functions.displacement(0.025, alp_n, functions.rho, functions.mu))
-print(functions.displacement(0.025, alp_n_toch, functions.rho_toch, functions.mu))
-print(alp_n, len(alp_n))
-print(alp_n_toch, len(alp_n_toch))
-A = functions.A1(functions.n, alp_n )
-
-
+"""
 def metod_Tihonova(A, f, a, b, c, d):
     N = m = n
 
@@ -134,8 +195,8 @@ plt.show()
 ##
 for i in range(1, 10):
     print("-------------------------", i)
-    alp_n = find_alp(SIGMA2)
-    print('alp_n', alp_n, len(alp_n))
+    roots = find_roots(SIGMA2)
+    print('alp_n', roots, len(roots))
     A = A1()
     rho2 = metod_Tihonova(A, f, a, b, c, d)
     for j in range(n):
@@ -158,3 +219,4 @@ plt.show()
 ##    intergal.append(s)
 ##print('intergal', intergal)
 ##print('f', f())
+"""
