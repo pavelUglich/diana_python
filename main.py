@@ -10,9 +10,12 @@ p = 1
 
 
 x = functions.x2
-alp_n = find_alp(functions.dispersion_equation)
-alp_n_toch = find_alp(functions.dispersion_equation)
-print(functions.displacement(0.025, alp_n_toch, functions.rho, functions.mu))
+equation1 = lambda xx: functions.dispersion_equation(xx, functions.rho)
+equation2 = lambda xx: functions.dispersion_equation(xx, functions.rho_toch)
+alp_n = find_alp(equation1)
+alp_n_toch = find_alp(equation2)
+print(functions.displacement(0.025, alp_n, functions.rho, functions.mu))
+print(functions.displacement(0.025, alp_n_toch, functions.rho_toch, functions.mu))
 print(alp_n, len(alp_n))
 print(alp_n_toch, len(alp_n_toch))
 A = functions.A1(functions.n, alp_n )

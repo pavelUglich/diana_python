@@ -67,7 +67,7 @@ def shoot(sys, kappa, rho, mu, y0, x, alp):
     :param alp: параметр преобразования Фурье
     :return: решение в точке b
     """
-    sol = solve_ivp(sys, [0, 1], y0, args=(kappa, rho, mu, alp), t_eval=x)
+    sol = solve_ivp(sys, [0, 1], y0, args=(kappa, rho, mu, alp), t_eval=x, rtol=1e-6)
     return sol.y
 
 
@@ -111,7 +111,7 @@ def U2(alp, idx):  # x2 - индекс
     return shoot(shorter_system, kappa, rho, mu, y0, x2, alp)[0][idx]
 
 
-def dispersion_equation(alpha):
+def dispersion_equation(alpha, rho):
     y0 = [0 + 0 * 1j, 1 + 0 * 1j]
     return shoot(shorter_system, kappa, rho, mu, y0, [0, 1], alpha)[1][-1]
 
