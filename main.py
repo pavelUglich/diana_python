@@ -8,9 +8,11 @@ from secant import find_alp
 p = 1
 
 
+
 x = functions.x2
-alp_n = find_alp(functions.SIGMA2)
-alp_n_toch = find_alp(functions.SIGMA2_toch)
+alp_n = find_alp(functions.dispersion_equation)
+alp_n_toch = find_alp(functions.dispersion_equation)
+print(functions.displacement(0.025, alp_n_toch, functions.rho, functions.mu))
 print(alp_n, len(alp_n))
 print(alp_n_toch, len(alp_n_toch))
 A = functions.A1(functions.n, alp_n )
@@ -35,7 +37,7 @@ def metod_Tihonova(A, f, a, b, c, d):
 
     F = [h_x * sum(u[i] * A[i][j] for i in range(m)) for j in range(n)]
 
-    # Строим матрицу C1
+    # РЎС‚СЂРѕРёРј РјР°С‚СЂРёС†Сѓ C1
     C1 = [[1 / (h_s) ** 2], [-1 / (h_s) ** 2, 2 / (h_s) ** 2]]
     for i in range(N - 2):
         c1 = [-1 / h_s ** 2, 2 / h_s ** 2]
@@ -125,7 +127,7 @@ plt.plot(x, rho_toch(x))
 plt.plot(x, rho3(x) + rho(x))
 plt.show()
 
-# итер проц
+# РёС‚РµСЂ РїСЂРѕС†
 ##
 for i in range(1, 10):
     print("-------------------------", i)

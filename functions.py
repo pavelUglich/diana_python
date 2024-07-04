@@ -24,7 +24,7 @@ for i in range(n):
 rho1 = np.zeros(n)
 
 
-def shorter_system(x, y0, kappa, rho, mu, alp):
+def shorter_system(x, y0, kappa, rho, mu, alpha):
     """
     малая система дифференциальных уравнений для решения системы в трансформантах
     :param x: поперечная координата
@@ -32,23 +32,23 @@ def shorter_system(x, y0, kappa, rho, mu, alp):
     :param kappa: частота
     :param rho: функция распределения плотности
     :param mu: функция распределения модуля сдвига
-    :param alp: параметр преобразования Фурье
+    :param alpha: параметр преобразования Фурье
     :return: набор правых частей системы уравнений
     """
     u, sigma = y0
-    return [sigma / mu(x), (alp ** 2 * mu(x) - kappa ** 2 * rho(x)) * u]
+    return [sigma / mu(x), (alpha ** 2 * mu(x) - kappa ** 2 * rho(x)) * u]
 
 
 def bigger_system(x, y0, kappa, rho, mu, alpha):
     """
     система, содержащая первые производные по alpha
-    :param x: поперечная координата 
-    :param y0: 
+    :param x: поперечная координата
+    :param y0:
     :param kappa: частота колебаниц
     :param rho: распределение плотности
     :param mu: распределение модуля сдвига
-    :param alpha: 
-    :return: 
+    :param alpha:
+    :return:
     """
     u, du, dsigma, sigma = y0
     return [sigma / mu(x), dsigma / mu(x), 2 * alpha * mu(x) * u + (alpha ** 2 * mu(x) - kappa ** 2 * rho(x)) * du,
@@ -103,7 +103,6 @@ def mu(x):
 
 def U2(alp, idx):  # x2 - индекс
     """
-
     :param alp:
     :param idx:
     :return:
@@ -112,38 +111,20 @@ def U2(alp, idx):  # x2 - индекс
     return shoot(shorter_system, kappa, rho, mu, y0, x2, alp)[0][idx]
 
 
-def SIGMA2(alpha):
+def dispersion_equation(alpha):
     y0 = [0 + 0 * 1j, 1 + 0 * 1j]
-    return shoot(shorter_system, kappa, rho, mu, y0, x2, alpha)[1][-1]
+    return shoot(shorter_system, kappa, rho, mu, y0, [0, 1], alpha)[1][-1]
 
 
-def U2_toch(alpha, idx):  # x2 - индекс
-    y0 = [0 + 0 * 1j, 1 + 0 * 1j]
-    return shoot(shorter_system, kappa, rho_toch, mu, y0, x2, alpha)[0][idx]
-
-
-def SIGMA2_toch(alpha):  # x2 - индекс
-    y0 = [0 + 0 * 1j, 1 + 0 * 1j]
-    return shoot(shorter_system, kappa, rho_toch, mu, y0, x2, alpha)[1][-1]
-
-
-def dSIGMA2(alpha):
+def displacement(x1, alpha, rho, mu):
+    result = 0
     y0 = [0 + 0 * 1j, 0 + 0 * 1j, 0 + 0 * 1j, 1 + 0 * 1j]
-    return shoot(bigger_system, kappa, rho, mu, y0, x2, alpha)[2][-1]  # !!!
-
-
-def dSIGMA2_toch(alpha):
-    y0 = [0 + 0 * 1j, 0 + 0 * 1j, 0 + 0 * 1j, p + 0 * 1j]
-    return shoot(bigger_system, kappa, rho_toch, mu, y0, x2, alpha)[2][-1]  # !!!
-
-
-def u(x1, x2):
-    return 1j * sum(U2(alp_n[i], x2) / dSIGMA2(alp_n[i]) * np.exp(1j * alp_n[i] * x1) for i in range(len(alp_n)))
-
-
-def u_toch(x1, x2):
-    return 1j * sum(U2_toch(alp_n_toch[i], x2) / dSIGMA2_toch(alp_n_toch[i]) * np.exp(1j * alp_n_toch[i] * x1) for i in
-                    range(len(alp_n_toch)))
+    for i in range(len(alpha)):
+        # def shoot(sys, kappa, rho, mu, y0, x, alp):
+        solution = shoot(bigger_system, kappa, rho, mu, y0, [0, 1], alpha[i])
+        term = solution[0][-1] / solution[2][-1]
+        result += 1j * term * np.exp(1j * alpha[i] * x1)
+    return result
 
 
 # print(u(0, 0))
@@ -173,7 +154,7 @@ def I(x1, idx, alpha):  # ksi индекс
     return 1j * s
 
 
-def f():
+def right_part():
     f = [u_toch(x1[i], -1).real - u(x1[i], -1).real for i in range(n)]
     return f
 
@@ -183,6 +164,6 @@ def A1(n, alpha):
     for i in range(n):
         for j in range(n):
             A[i][j] = kappa ** 2 * I(x1[i], j, alpha).real
-            print("A = ", A[i][j])  #!!!!
+            print("A[", i, ",", j, "] = ", A[i][j])  #!!!!
     return A
 
