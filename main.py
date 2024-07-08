@@ -1,3 +1,4 @@
+from typing import List
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -57,12 +58,10 @@ roots_toch = find_roots(equation2)
 residues = functions.find_residues(roots, rho, functions.mu, kappa)
 residues_toch = functions.find_residues(roots, functions.rho_toch, functions.mu, kappa)
 
-# print(functions.displacement(0.025, roots, residues))
-# print(functions.displacement(0.025, roots_toch, residues_toch))
 
 # построение правой части
-wavefield = []
-wavefield_toch = []
+wavefield: list[int] = []
+wavefield_toch: list[int] = []
 for i in range(n_x):
     wavefield.append(functions.displacement(x1[i], roots, residues))
     wavefield_toch.append(functions.displacement(x1[i], roots_toch, residues_toch))
@@ -77,7 +76,7 @@ b_1, b_2 = functions.evaluate_b1_b2(roots, rho, functions.mu, kappa)
 a_0, a_1 = functions.evaluate_a0_a1(roots, rho, functions.mu, kappa, x2)
 A = functions.matrix_rho(roots, x1, a_0, a_1, b_1, b_2, n_x, n_y)
 A = functions.process_matrix(A, kappa, h_y)
-#A = functions.A1(functions.n, roots)
+
 
 
 
