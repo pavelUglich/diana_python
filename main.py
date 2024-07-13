@@ -87,9 +87,9 @@ matrix=[]
 for i in range(n_x):
     row = np.zeros(n_y, dtype=complex)
     for ii in range(n_y):
-        x=h_x*i
-        y=h_y*ii
-        row[ii]=1/(1+10*(x-y)**2)
+        x = h_x*i
+        y = h_y*ii
+        row[ii] = 1/(1+10*(x-y)**2)
     matrix.append(row)
 
 vm = VoyevodinMethod(matrix, rp, h_y, BoundaryCondition.DIRICHLE, BoundaryCondition.DIRICHLE)
