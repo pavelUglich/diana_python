@@ -4,7 +4,6 @@ from Stabilizer import Stabilizer
 
 
 class MatrixSystem:
-    # ms = MatrixSystem(matrix, right_part, step, h, delta, eps)
 
     def __init__(self, matrix, right_part, step, h, p, left, right):
         self.__matrix = matrix
@@ -103,3 +102,56 @@ class MatrixSystem:
                 sc += av[ii] * self.__right_part[ii]
             for ii in range(i + 1, self.__columns):
                 self.__right_part[ii] -= 2 * av[ii].conjugate() * sc
+
+    @property
+    def diagonal(self):
+        return self.__p1
+
+    @property
+    def up_diagonal(self):
+        return self.__p2
+
+    @property
+    def right_part(self):
+        return self.__right_part
+
+    def multiply_qtu(self, right_part):
+        qtu = right_part[:]
+        for i in range(self.__columns):
+            if i > self.__rows:
+                break
+            a = np.zeros(self.__rows - 1, dtype=complex)
+            for ii in range(self.__rows - 1):
+                a[ii] = self.__matrix[ii + 1][i]
+            sc = 0
+            for ii in range(self.__rows - 1):
+                sc += a[ii].conjugate() * qtu[ii + i]
+            for ii in range(i, len(qtu)):
+                qtu[ii] -= 2 * a[ii - i] * sc
+        return qtu
+
+    def __multiply_rtx(self, u):
+        v = u[:]
+        for i in range(self.__rows):
+            l: int = self.__rows - i
+            if self.__columns < l:
+                continue
+            a = np.zeros(self.__columns - l)
+            for ii in range(len(a)):
+                a[ii] = self.__matrix[l - 1][ii + l]
+            sc = 0
+            for ii in range(len(a)):
+                sc += a[ii] * v[ii + l]
+            for ii in range(l, self.__columns):
+                v[ii] -= 2 * a[ii - l].conjugate() * sc
+        u = v[:]
+
+    def __multiply_sinv(self, u):
+        diagonal = self.__stabilizer.diagonal
+        up_diagonal = self.__stabilizer.up_diagonal
+        x = u[:]
+        x[self.__columns - 1] = u[self.__columns - 1] / diagonal[self.__columns - 1]
+        for i in range(1, self.__columns):
+            j = self.__columns - i - 1
+            x[j] = (u[j] - up_diagonal[j] * x[j + 1]) / diagonal[j]
+        u = x[:]

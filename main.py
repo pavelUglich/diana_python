@@ -83,7 +83,7 @@ for i in range(n_y):
     y=i*h_y
     rp[i] = np.sin(3.1415926538*y)
 
-matrix=[]
+matrix = []
 for i in range(n_x):
     row = np.zeros(n_y, dtype=complex)
     for ii in range(n_y):
