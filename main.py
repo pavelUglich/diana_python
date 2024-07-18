@@ -14,11 +14,11 @@ kappa = 2
 n_x: int = 20
 n_y: int = 20
 a = 0
-b = 1
+b = 2
 c = 0
 d = 1
 
-h_x = 1 / n_x  # Длина каждого подотрезка
+h_x = 2 / n_x  # Длина каждого подотрезка
 h_y = 1 / n_y  # Длина каждого подотрезка
 
 x1 = np.zeros(n_x)  # Создание массива из N элементов
@@ -80,19 +80,19 @@ A = functions.process_matrix(A, kappa, h_y)
 
 rp = np.zeros(n_y)
 for i in range(n_y):
-    y=i*h_y
+    y = i*h_y
     rp[i] = np.sin(3.1415926538*y)
 
 matrix = []
 for i in range(n_x):
     row = np.zeros(n_y, dtype=complex)
     for ii in range(n_y):
-        x = h_x*i
-        y = h_y*ii
-        row[ii] = 1/(1+10*(x-y)**2)
+        x = h_x*(i+0.5)
+        y = h_y*(ii+0.5)
+        row[ii] = h_x/(1+10*(x-y)**2)
     matrix.append(row)
 
-vm = VoyevodinMethod(matrix, rp, h_y, BoundaryCondition.DIRICHLE, BoundaryCondition.DIRICHLE)
+vm = VoyevodinMethod(matrix, rp, h_x, BoundaryCondition.DIRICHLE, BoundaryCondition.DIRICHLE)
 
 
 

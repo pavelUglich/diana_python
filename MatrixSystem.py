@@ -22,7 +22,7 @@ class MatrixSystem:
         diagonal = self.__stabilizer.diagonal
         up_diagonal = self.__stabilizer.up_diagonal
         for i in range(len(self.__matrix)):
-            self.__matrix[i][0] /= diagonal[i]
+            self.__matrix[i][0] /= diagonal[0]
         for i in range(1, len(self.__matrix[0])):
             for ii in range(len(self.__matrix)):
                 self.__matrix[ii][i] -= up_diagonal[i - 1] * self.__matrix[ii][i - 1]
