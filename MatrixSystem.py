@@ -52,7 +52,10 @@ class MatrixSystem:
         for i in range(l):
             av[i] = self.__matrix[i + k][k]
         av[0] -= np.linalg.norm(av) * av[0] / abs(av[0])
-        av /= np.linalg.norm(av)
+        nn = np.linalg.norm(av)
+        dbl_epsilon = np.finfo(float).eps
+        if nn > dbl_epsilon:
+            av /= nn
         vv = np.zeros(l, dtype=complex)
         for i in range(l):
             vv[i] = self.__matrix[i + k][k]
@@ -76,7 +79,10 @@ class MatrixSystem:
         for i in range(l):
             av[i] = self.__matrix[k][i + k + 1]
         av[0] -= np.linalg.norm(av) * av[0] / abs(av[0])
-        av /= np.linalg.norm(av)
+        dbl_epsilon = np.finfo(float).eps
+        nn = np.linalg.norm(av)
+        if nn > dbl_epsilon:
+            av /= np.linalg.norm(av)
         vv = np.zeros(l, dtype=complex)
         for i in range(l):
             vv[i] = self.__matrix[k][i + k + 1]

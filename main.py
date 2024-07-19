@@ -11,8 +11,8 @@ from voyevodin import VoyevodinMethod
 kappa = 2
 
 # 2. Количество точек на отрезках
-n_x: int = 20
-n_y: int = 20
+n_x: int = 5
+n_y: int = 5
 a = 0
 b = 2
 c = 0
