@@ -28,8 +28,8 @@ class IterativeProcess:
         if len(self.__p1) == len(self.__p2):
             self.__a[size - 1] = np.abs(self.__p2[size - 1]) ** 2
         else:
-            self.__a[size - 1] = np.abs(self.__p2[size - 1]) ** 2 + np.abs(self.__p1[size - 1]) ** 2
-        self.__b[0] = self.__p1[0].conjugate()* self.__p2[0]
+            self.__a[size - 1] = np.abs(self.__p2[size - 2]) ** 2 + np.abs(self.__p1[size - 1]) ** 2
+        self.__b[0] = self.__p1[0].conjugate() * self.__p2[0]
         self.__b[size-1] = 0
         for i in range(1, self.__size - 1):
             self.__a[i] = np.abs(self.__p2[i-1]) ** 2 + np.abs(self.__p1[i]) ** 2
@@ -49,7 +49,7 @@ class IterativeProcess:
             sn = self.__residual(alpha)
             alpha_s = alpha_n
             alpha_n = alpha
-            if np.abs(alpha_n-alpha_s):
+            if np.abs(alpha_n-alpha_s) < self.__eps:
                 break
 
 
@@ -70,9 +70,9 @@ class IterativeProcess:
         return self.__step**2 * npz**2 - (self.__delta+self.__h*nz)**2
 
     def __marching(self, a):
-        x = np.zeros(self.__size)
-        xi = np.zeros(self.__size + 1)
-        eta = np.zeros(self.__size + 1)
+        x = np.zeros(self.__size, dtype=complex)
+        xi = np.zeros(self.__size + 1, dtype=complex)
+        eta = np.zeros(self.__size + 1, dtype=complex)
         xi[0] = 0
         eta[0] = 0
         for i in range(self.__size):

@@ -78,9 +78,9 @@ A = functions.matrix_rho(roots, x1, a_0, a_1, b_1, b_2, n_x, n_y)
 A = functions.process_matrix(A, kappa, h_y)
 """
 
-rp = np.zeros(n_y)
-for i in range(n_y):
-    y = i*h_y
+rp = np.zeros(n_x, dtype=complex)
+for i in range(n_x):
+    y = (i+0.5)*h_x
     rp[i] = np.sin(3.1415926538*y)
 
 matrix = []
@@ -92,7 +92,8 @@ for i in range(n_x):
         row[ii] = h_x/(1+10*(x-y)**2)
     matrix.append(row)
 
-vm = VoyevodinMethod(matrix, rp, h_x, BoundaryCondition.DIRICHLE, BoundaryCondition.DIRICHLE)
+vm = VoyevodinMethod(matrix, rp, h_x, BoundaryCondition.DIRICHLE, BoundaryCondition.DIRICHLE).solution
+print(vm)
 
 
 
