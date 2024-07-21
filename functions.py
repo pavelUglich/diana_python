@@ -57,7 +57,7 @@ def rho_toch(x):
     :param x: поперечная координата
     :return: значение плотности
     """
-    eta = 0.1
+    eta = 0.01
     return 1 + eta * np.sin(np.pi * x)
 
 
@@ -98,7 +98,7 @@ def array_difference(arr1, arr2):
 
     result = []
     for i in range(len(arr1)):
-        result.append(arr1[i] - arr2[i])
+        result.append((arr1[i] - arr2[i]))
 
     return result
 

@@ -11,15 +11,15 @@ from voyevodin import VoyevodinMethod
 kappa = 2
 
 # 2. Количество точек на отрезках
-n_x: int = 5
-n_y: int = 5
+n_x: int = 20
+n_y: int = 20
 a = 0
-b = 2
+b = 1
 c = 0
 d = 1
 
-h_x = 2 / n_x  # Длина каждого подотрезка
-h_y = 1 / n_y  # Длина каждого подотрезка
+h_x = b / n_x  # Длина каждого подотрезка
+h_y = d / n_y  # Длина каждого подотрезка
 
 x1 = np.zeros(n_x)  # Создание массива из N элементов
 x2 = np.zeros(n_y)  # Создание массива из N элементов
@@ -31,21 +31,21 @@ for i in range(n_x):
 for i in range(n_y):
     x2[i] = (i + 0.5) * h_y
 
-"""
+
 # Восстанавливаемая плотность
 rho1 = np.zeros(n_y)
 
 
-#def rho(x):
-#    """
-#    функция распределения плотности (восстанавиваемая)
-#    :param x: поперечная координата
-#    :return: значение плотности
-#    """
-#    spl = UnivariateSpline(x2, rho1, k=5)
-#    return 1 + spl(x)
+def rho(x):
+    """
+    функция распределения плотности (восстанавиваемая)
+    :param x: поперечная координата
+    :return: значение плотности
+    """
+    spl = UnivariateSpline(x1, rho1, k=5)
+    return 1 + spl(x)
 
-"""
+
 # построение двух дисперсионных уравнений
 equation1 = lambda xx: functions.dispersion_equation(xx, rho, functions.mu, kappa)
 equation2 = lambda xx: functions.dispersion_equation(xx, functions.rho_toch, functions.mu, kappa)
@@ -60,12 +60,12 @@ residues_toch = functions.find_residues(roots, functions.rho_toch, functions.mu,
 
 
 # построение правой части
-wavefield: list[int] = []
-wavefield_toch: list[int] = []
+wavefield = []
+wavefield_toch = []
 for i in range(n_x):
     wavefield.append(functions.displacement(x1[i], roots, residues))
     wavefield_toch.append(functions.displacement(x1[i], roots_toch, residues_toch))
-rp = functions.array_difference(wavefield, wavefield_toch)
+rp = functions.array_difference(wavefield_toch, wavefield)
 
 # print(roots, len(roots))
 # print(roots_toch, len(roots_toch))
@@ -76,8 +76,9 @@ b_1, b_2 = functions.evaluate_b1_b2(roots, rho, functions.mu, kappa)
 a_0, a_1 = functions.evaluate_a0_a1(roots, rho, functions.mu, kappa, x2)
 A = functions.matrix_rho(roots, x1, a_0, a_1, b_1, b_2, n_x, n_y)
 A = functions.process_matrix(A, kappa, h_y)
-"""
 
+
+"""
 rp = np.zeros(n_x, dtype=complex)
 for i in range(n_x):
     y = (i+0.5)*h_x
@@ -91,8 +92,9 @@ for i in range(n_x):
         y = h_y*(ii+0.5)
         row[ii] = h_x/(1+10*(x-y)**2)
     matrix.append(row)
+"""
 
-vm = VoyevodinMethod(matrix, rp, h_x, BoundaryCondition.DIRICHLE, BoundaryCondition.DIRICHLE).solution
+vm = VoyevodinMethod(A, rp, h_x, BoundaryCondition.DIRICHLE, BoundaryCondition.DIRICHLE).solution
 print(vm)
 
 
